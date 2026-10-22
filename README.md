@@ -18,6 +18,3 @@ A fork of [Inventory Profiles Next](https://codeberg.org/Inventory-Profiles-Next
 - Inventory sorting, including sorting by rows and columns
 - Manual slot locking
 - Slot highlighting
-
-## Important
-These features were disabled in their normal input and tick handlers, not completely deleted from the code.
