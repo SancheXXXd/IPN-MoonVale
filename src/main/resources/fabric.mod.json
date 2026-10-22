@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": "inventoryprofilesnext",
+  "version": "2.3.8+26.3",
+  "name": "Inventory Profiles Next (MoonVale)",
+  "description": "Allowed version of the Inventory Profiles Next mod for the MoonVale server",
+  "authors": [
+    "SancheXXXd_",
+    "Omeleox"
+  ],
+  "contributors": [],
+  "contact": {
+    "homepage": "https://inventory-profiles-next.github.io/",
+    "issues": "https://discord.gg/23YCxmveUM"
+  },
+  "license": "AGPL-3",
+  "icon": "assets/inventoryprofilesnext/mod-icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "org.anti_ad.mc.ipnext.InventoryProfilesKt::init"
+    ],
+    "modmenu": [
+      "org.anti_ad.mc.ipnext.compat.ModMenuApiImpl"
+    ]
+  },
+  "mixins": [
+    "mixins.ipnext.json"
+  ],
+  "accessWidener": "inventoryprofilesnext.accesswidener",
+  "depends": {
+    "minecraft": ">=26.3 <26.4",
+    "libipn": ">=6.9.0 <6.10",
+    "fabric-language-kotlin": ">=1.13.10+kotlin.2.3.20"
+  }
+}

@@ -1,0 +1,48 @@
+plugins {
+    id 'net.fabricmc.fabric-loom' version '1.19.2'
+    id 'org.jetbrains.kotlin.jvm' version '2.4.20'
+    id 'org.jetbrains.kotlin.plugin.serialization' version '2.4.20'
+    id 'antlr'
+    id 'com.gradleup.shadow' version '9.3.0'
+}
+version = project.mod_version
+group = 'org.anti_ad.mc'
+base { archivesName = 'IPNMoonVale-fabric' }
+repositories { mavenCentral() }
+loom { accessWidenerPath = file('src/main/resources/inventoryprofilesnext.accesswidener') }
+configurations { shade }
+configurations.implementation.extendsFrom(configurations.shade)
+dependencies {
+    minecraft "com.mojang:minecraft:${minecraft_version}"
+    implementation "net.fabricmc:fabric-loader:${loader_version}"
+    implementation 'net.fabricmc.fabric-api:fabric-api:0.163.0+26.3'
+    implementation files('libs/libIPN-fabric-26.3-6.9.0.jar')
+    compileOnly files('libs/modmenu-21.0.0.jar', 'libs/controlify.jar', 'libs/carpet.jar')
+    implementation 'org.jetbrains.kotlin:kotlin-reflect:2.4.20'
+    implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0'
+    antlr 'org.antlr:antlr4:4.13.2'
+    shade 'org.antlr:antlr4-runtime:4.13.2'
+    shade 'com.yevdo:jwildcard:1.4'
+}
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(25)
+    withSourcesJar()
+}
+kotlin { jvmToolchain(25) }
+tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8'; options.release = 25 }
+generateGrammarSource {
+    arguments += ['-visitor', '-package', 'org.anti_ad.mc.ipnext.gen', '-Xexact-output-dir']
+    outputDirectory = file("$buildDir/generated-src/antlr/main/org/anti_ad/mc/ipnext/gen")
+}
+compileKotlin.dependsOn(generateGrammarSource)
+sourcesJar.dependsOn(generateGrammarSource)
+shadowJar {
+    configurations = [project.configurations.shade]
+    archiveClassifier = ''
+    archiveFileName = "IPNMoonVale-fabric-2.3.8-mc26.3.jar"
+    relocate 'org.antlr', 'org.anti_ad.embedded.org.antlr'
+    relocate 'com.yevdo', 'org.anti_ad.embedded.com.yevdo'
+    exclude 'META-INF/MANIFEST.MF'
+}
+jar { archiveClassifier = 'unshaded'; from('LICENSE') }
+build.dependsOn(shadowJar)

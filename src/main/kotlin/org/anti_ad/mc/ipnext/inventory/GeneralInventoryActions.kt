@@ -1,0 +1,512 @@
+/*
+ * Inventory Profiles Next
+ *
+ *   Copyright (c) 2019-2020 jsnimda <7615255+jsnimda@users.noreply.github.com>
+ *   Copyright (c) 2021-2022 Plamen K. Kosseff <p.kosseff@gmail.com>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+package org.anti_ad.mc.ipnext.inventory
+
+import net.minecraft.core.component.DataComponentType
+import net.minecraft.nbt.NbtUtils
+import net.minecraft.world.entity.player.Inventory
+import net.minecraft.world.inventory.AbstractContainerMenu
+import net.minecraft.world.inventory.BeaconMenu
+import net.minecraft.world.inventory.Slot
+
+import org.anti_ad.mc.common.LogBase
+import org.anti_ad.mc.ipnext.Log
+import org.anti_ad.mc.common.TellPlayer
+import org.anti_ad.mc.common.config.options.ConfigEnum
+import org.anti_ad.mc.common.config.options.ConfigString
+import org.anti_ad.mc.common.extensions.containsAny
+import org.anti_ad.mc.common.extensions.tryCatch
+import org.anti_ad.mc.ipnext.integration.HintsManagerNG
+import org.anti_ad.mc.common.vanilla.Vanilla
+import org.anti_ad.mc.ipnext.config.GuiSettings
+import org.anti_ad.mc.ipnext.config.ModSettings
+import org.anti_ad.mc.ipnext.config.PostAction
+import org.anti_ad.mc.ipnext.config.ScrollSettings
+import org.anti_ad.mc.ipnext.config.SortingMethodIndividual
+import org.anti_ad.mc.ipnext.config.rule
+import org.anti_ad.mc.ipnext.ingame.`(id)`
+import org.anti_ad.mc.ipnext.ingame.`(invSlot)`
+import org.anti_ad.mc.ipnext.ingame.`(inventory)`
+import org.anti_ad.mc.ipnext.ingame.`(inventoryOrNull)`
+import org.anti_ad.mc.ipnext.ingame.`(itemStack)`
+import org.anti_ad.mc.ipnext.ingame.`(slots)`
+import org.anti_ad.mc.ipnext.ingame.vCursorStack
+import org.anti_ad.mc.ipnext.ingame.vFocusedSlot
+import org.anti_ad.mc.ipnext.inventory.ContainerType.*
+import org.anti_ad.mc.ipnext.inventory.action.moveAllTo
+import org.anti_ad.mc.ipnext.inventory.action.moveFocusMatchTo
+import org.anti_ad.mc.ipnext.inventory.action.moveMatchCraftingTo
+import org.anti_ad.mc.ipnext.inventory.action.moveMatchTo
+import org.anti_ad.mc.ipnext.inventory.action.refillStacksTo
+import org.anti_ad.mc.ipnext.inventory.action.restockFrom
+import org.anti_ad.mc.ipnext.inventory.action.sort
+import org.anti_ad.mc.ipn.features.scrolling.ScrollDirection
+import org.anti_ad.mc.ipn.features.scrolling.ScrollingUtils
+import org.anti_ad.mc.ipnext.config.Features
+import org.anti_ad.mc.ipnext.config.SortSettings
+import org.anti_ad.mc.ipnext.item.ComponentUtils.toFullNbtOrNull
+import org.anti_ad.mc.ipnext.item.EMPTY
+import org.anti_ad.mc.ipnext.item.ItemStack
+import org.anti_ad.mc.ipnext.item.fullItemInfoAsJson
+import org.anti_ad.mc.ipnext.item.`(isBundleAndHasItems)`
+import org.anti_ad.mc.ipnext.item.isEmpty
+import org.anti_ad.mc.ipnext.item.itemId
+import org.anti_ad.mc.ipnext.item.rule.Rule
+import java.util.Optional
+
+object GeneralInventoryActions {
+
+    @Suppress("UNUSED_PARAMETER")
+    fun doSort(container: AbstractContainerMenu, gui: Boolean = false, forcePlayer: Boolean = false) {
+        if (!Features.ENABLE_SORTING_AND_MOVING.booleanValue) return
+        with(GuiSettings) {
+            doSort(REGULAR_SORT_ORDER,
+                   REGULAR_CUSTOM_RULE,
+                   REGULAR_POST_ACTION,
+                   forcePlayer,
+                   container)
+        }
+    }
+
+    fun doSortInColumns(container: AbstractContainerMenu,
+                        gui: Boolean = false,
+                        forcePlayer: Boolean = false) {
+        if (!Features.ENABLE_SORTING_AND_MOVING.booleanValue) return
+        with(GuiSettings) {
+            doSort(IN_COLUMNS_SORT_ORDER,
+                   IN_COLUMNS_CUSTOM_RULE,
+                   IN_COLUMNS_POST_ACTION,
+                   forcePlayer,
+                   container)
+        }
+    }
+
+    fun doSortInRows(container: AbstractContainerMenu,
+                     gui: Boolean = false,
+                     forcePlayer: Boolean = false) {
+        if (!Features.ENABLE_SORTING_AND_MOVING.booleanValue) return
+        with(GuiSettings) {
+            doSort(IN_ROWS_SORT_ORDER,
+                   IN_ROWS_CUSTOM_RULE,
+                   IN_ROWS_POST_ACTION,
+                   forcePlayer,
+                   container)
+        }
+    }
+
+    private fun doSort(sortOrder: ConfigEnum<SortingMethodIndividual>,
+                       customRule: ConfigString,
+                       postAction: ConfigEnum<PostAction>,
+                       forcePlayer: Boolean,
+                       container: AbstractContainerMenu) {
+
+        TellPlayer.listenLog(LogBase.LogLevel.WARN) {
+            InnerActions.doSort(sortOrder.value.rule(customRule.value),
+                                postAction.value, forcePlayer,
+                                container)
+        }
+    }
+
+    // MOVE_ALL_AT_CURSOR off = to container, on -> (pointing container -> to player) else to container
+    // use MOVE_ALL_AT_CURSOR instead of SORT_AT_CURSOR
+    fun doMoveMatch() {
+        if (!Features.ENABLE_SORTING_AND_MOVING.booleanValue) return
+        val types = ContainerTypes.getTypes(Vanilla.container())
+        if (types.contains(CREATIVE)) return // no do creative menu
+        if (!types.containsAny(setOf(SORTABLE_STORAGE,
+                                     NO_SORTING_STORAGE,
+                                     CRAFTING))) return
+        val forceToPlayer = ModSettings.MOVE_ALL_AT_CURSOR.booleanValue && vFocusedSlot()?.let {
+            it.`(inventoryOrNull)` == null || it.`(inventory)` !is Inventory
+        } ?: false // hover slot exist and not player
+
+
+        if (forceToPlayer) {
+            doMoveMatch(true) // container to player // non player and player by PlayerInventory
+        } else {
+            doMoveMatch(false) // player to container
+        }
+    }
+
+
+    fun doThrowOfType(type: ItemStack) {
+        val vanillaContainer = Vanilla.container()
+        val types = ContainerTypes.getTypes(vanillaContainer)
+        if (types.contains(CREATIVE)) {
+            return
+        } // no do creative menu
+        if (!types.containsAny(setOf(SORTABLE_STORAGE,
+                                     NO_SORTING_STORAGE,
+                                     CRAFTING))) {
+            return
+        }
+        val isContainer = false
+
+        val includeHotbar = true
+        val throwAll = false
+        executeThrow(includeHotbar, vanillaContainer, isContainer, throwAll, type)
+    }
+
+    // THROWS_ALL_AT_CURSOR off
+    fun doThrowMatch() {
+        if (!Features.ENABLE_SORTING_AND_MOVING.booleanValue) return
+        val vanillaContainer = Vanilla.container()
+        val types = ContainerTypes.getTypes(vanillaContainer)
+        if (types.contains(CREATIVE)) {
+            return
+        } // no do creative menu
+        if (!types.containsAny(setOf(SORTABLE_STORAGE,
+                                     NO_SORTING_STORAGE,
+                                     CRAFTING))) {
+            return
+        }
+        val isContainer = ModSettings.MOVE_ALL_AT_CURSOR.booleanValue &&
+                vFocusedSlot()?.let { it.`(inventoryOrNull)` != null && it.`(inventory)` !is Inventory } ?: false // hover slot exist and not player
+
+        val includeHotbar = // xor
+                ModSettings.INCLUDE_HOTBAR_MODIFIER.isPressing() != ModSettings.ALWAYS_INCLUDE_HOTBAR.booleanValue
+        val throwAll = // xor
+                ModSettings.MOVE_ALL_MODIFIER.isPressing() != ModSettings.ALWAYS_THROW_ALL.booleanValue
+
+        executeThrow(includeHotbar, vanillaContainer, isContainer, throwAll)
+    }
+
+    private fun executeThrow(includeHotbar: Boolean,
+                             vanillaContainer: AbstractContainerMenu,
+                             isContainer: Boolean,
+                             throwAll: Boolean,
+                             type: ItemStack? = null) {
+        with(AreaTypes) {
+            val player = (if (includeHotbar) (playerStorage + playerHotbar) else playerStorage) - lockedSlots
+            val container = itemStorage
+            val slots = vanillaContainer.`(slots)`
+            val source = ((if (isContainer) container else player) - vanillaContainer.disabled).getItemArea(vanillaContainer, slots)
+
+            val actUponSlots = if (throwAll) {
+                val res = mutableMapOf<Int, Slot>()
+                source.slotIndices.forEach() {
+                    val checkStack = slots[it]
+                    if (!checkStack.`(itemStack)`.isEmpty()) {
+                        res[it] = checkStack
+                    }
+                }
+                res
+            } else {
+                val focusedStack = type ?: vFocusedSlot()?.`(itemStack)` ?: vCursorStack()
+                focusedStack.itemType.ignoreDurability = ModSettings.IGNORE_DURABILITY.booleanValue
+                val res = mutableMapOf<Int, Slot>()
+                if (!focusedStack.isEmpty()) {
+                    source.slotIndices.forEach {
+                        val checkStack = slots[it].`(itemStack)`.also { itemStack ->  itemStack.itemType.ignoreDurability = ModSettings.IGNORE_DURABILITY.booleanValue }
+                        val isEmpty = checkStack.isEmpty()
+                        if (!isEmpty && checkStack.itemType == focusedStack.itemType) {
+                            res[it] = slots[it]
+                        }
+                    }
+                }
+                res
+            }
+            if (actUponSlots.isNotEmpty()) {
+                val interval: Int =
+                        if (ModSettings.ADD_INTERVAL_BETWEEN_CLICKS.booleanValue) {
+                            ModSettings.INTERVAL_BETWEEN_CLICKS_MS.integerValue
+                        }
+                        else {
+                            0
+                        }
+                ContainerClicker.executeQClicks(actUponSlots, interval)
+            }
+
+        }
+    }
+
+    fun doMoveMatch(toPlayer: Boolean, gui: Boolean = false) { // true container to player or false player to container
+        val vanillaContainer = Vanilla.container()
+        val types = ContainerTypes.getTypes(vanillaContainer)
+        if (types.contains(CREATIVE)) return // no do creative menu
+        if (types.contains(CRAFTING)) {
+            doMoveMatchCrafting(vanillaContainer)
+            return
+        }
+        val includeHotbar = // xor
+                ModSettings.INCLUDE_HOTBAR_MODIFIER.isPressing() != ModSettings.ALWAYS_INCLUDE_HOTBAR.booleanValue
+        val moveAll = // xor
+                ModSettings.MOVE_ALL_MODIFIER.isPressing() != ModSettings.ALWAYS_MOVE_ALL.booleanValue
+        val moveFocusMatch = ModSettings.MOVE_FOCUS_MACH_MODIFIER.isPressing() || !vCursorStack().isEmpty()
+        val moveJustRefill = ModSettings.MOVE_JUST_REFILL_MODIFIER.isPressing()
+        AdvancedContainer.tracker {
+            with(AreaTypes) {
+                val player = ((if (includeHotbar || (toPlayer && moveJustRefill)) (playerStorage + playerHotbar + playerOffhand) else playerStorage) -
+                        lockedSlots) - vanillaContainer.disabled
+                val container = itemStorage - vanillaContainer.disabled
+                val source = (if (toPlayer) container else player).get().asSubTracker
+                val destination = (if (toPlayer) player else container).get().asSubTracker // source -> destination
+                if (moveAll) {
+                    source.moveAllTo(destination)
+                } else {
+                    if (moveFocusMatch) {
+                        source.moveFocusMatchTo(destination)
+                    } else if (moveJustRefill) {
+                        source.refillStacksTo(destination)
+                    } else {
+                        source.moveMatchTo(destination)
+                    }
+                }
+            }
+        }
+    }
+
+    fun doMoveMatchCrafting(vanillaContainer: AbstractContainerMenu) {
+        //val includeHotbar = VanillaUtil.altDown()
+        val includeHotbar = ModSettings.INCLUDE_HOTBAR_MODIFIER.isPressing()
+        AdvancedContainer.tracker {
+            with(AreaTypes) {
+                val player = (if (includeHotbar) (playerStorage + playerHotbar + playerOffhand) else playerStorage) - lockedSlots
+                val target = craftingIngredient
+                val source = (player - vanillaContainer.disabled).get().asSubTracker
+                val destination = target.get().asSubTracker // source -> destination
+                source.moveMatchCraftingTo(destination)
+            }
+        }
+    }
+
+    fun dumpItemNbt() {
+        val stack = vFocusedSlot()?.`(itemStack)` ?: vCursorStack()
+        //TellPlayer.chat(stack.itemType.toNamespacedString())
+        val item = stack.itemType.fullItemInfoAsJson()
+        Log.info(item)
+        TellPlayer.chat("Slot: ${vFocusedSlot()?.`(invSlot)`}, ${vFocusedSlot()?.`(id)`} $item")
+    }
+
+    fun nbtToClipboard() {
+        val stack = vFocusedSlot()?.`(itemStack)` ?: vCursorStack()
+        if (stack != ItemStack.EMPTY) {
+            var item = "${stack.itemType.itemId} => [\n"
+            val tg = stack.itemType.tag
+            if (!tg.isEmpty) {
+                tg.keySet().forEach { type: DataComponentType<*> ->
+                    val value = tg.get(type)
+                    if (value != null) {
+                        type.toFullNbtOrNull(value)?.let {
+                            val tString = "$type ->\n"
+                            item += "\t" + tString
+                            val sep = "\t" + " ".repeat(tString.length) + "\t"
+                            val tx = NbtUtils.toPrettyComponent(it).string.lineSequence().joinToString(separator = "\n$sep", prefix = sep)
+                            item += tx
+                        }
+                    }
+                    item += "\n"
+                }
+                Vanilla.setClipboard(item)
+                TellPlayer.chat(org.anti_ad.mc.common.vanilla.alias.glue.I18n.translate("ipnlegit.chat.copied_components"))
+            }
+        }
+    }
+
+    fun idToClipboard() {
+        val stack = vFocusedSlot()?.`(itemStack)` ?: vCursorStack()
+        if (stack != ItemStack.EMPTY) {
+            Vanilla.setClipboard("${stack.itemType.itemId}\n")
+            TellPlayer.chat(org.anti_ad.mc.common.vanilla.alias.glue.I18n.translate("ipnlegit.chat.copied_item_id"))
+        }
+    }
+
+    fun cleanCursor() {
+        if (vCursorStack().isEmpty()) return
+        AdvancedContainer(instant = true) {
+            cleanCursor()
+        }
+    }
+
+    fun handleCloseContainer() {
+        cleanCursor()
+        InnerActions.cleanTempSlotsForClosing()
+    }
+
+    fun scrollToPlayer(focusedItem: ItemStack) {
+        val itemType = focusedItem.itemType
+/*
+        if (!ScrollSettings.TEMP_DISABLE.isPressing() &&
+            !(ScrollSettings.DISABLE_FOR_NON_EMPTY_BUNDLES.booleanValue && itemType.`(isBundleAndHasItems)`)) {
+*/
+        if (isEnabled(focusedItem)) {
+            if (ScrollSettings.SCROLL_FULL_STACK.isPressing()) {
+                if (ScrollSettings.SCROLL_THROW.isPressing()) {
+                    ScrollingUtils.scrollFullStackThrow()
+                } else if (ScrollSettings.SCROLL_SPREAD.isPressing()) {
+                    ScrollingUtils.scrollFullStackSpread(ScrollDirection.TO_PLAYER)
+                } else if (ScrollSettings.SCROLL_LEAVE_LAST.isPressing()) {
+                    ScrollingUtils.scrollFullStackLeaveLast(ScrollDirection.TO_PLAYER)
+                } else {
+                    ScrollingUtils.scrollFullStack(ScrollDirection.TO_PLAYER)
+                }
+            } else {
+                if (ScrollSettings.SCROLL_THROW.isPressing()) {
+                    ScrollingUtils.scrollSingleItemThrow()
+                } else if (ScrollSettings.SCROLL_SPREAD.isPressing()) {
+                    ScrollingUtils.scrollSingleSpread(ScrollDirection.TO_PLAYER)
+                } else if (ScrollSettings.SCROLL_LEAVE_LAST.isPressing()) {
+                    ScrollingUtils.scrollSingleItemLeaveLast(ScrollDirection.TO_PLAYER)
+                } else {
+                    ScrollingUtils.scrollSingleItem(ScrollDirection.TO_PLAYER)
+                }
+            }
+        }
+    }
+
+    fun isEnabled(focusedItem: ItemStack) : Boolean {
+        val itemType = focusedItem.itemType
+        val isTempDisable = ScrollSettings.TEMP_DISABLE.isPressing()
+        val isBundle = ScrollSettings.DISABLE_FOR_NON_EMPTY_BUNDLES.booleanValue && itemType.`(isBundleAndHasItems)`
+        return  isBundle && isTempDisable ||
+                !isBundle && !isTempDisable
+    }
+
+    fun scrollToChest(focusedItem: ItemStack) {
+
+        if (isEnabled(focusedItem)) {
+            if (ScrollSettings.SCROLL_FULL_STACK.isPressing()) {
+                if (ScrollSettings.SCROLL_THROW.isPressing()) {
+                    ScrollingUtils.scrollFullStackThrow()
+                } else if (ScrollSettings.SCROLL_SPREAD.isPressing()) {
+                    ScrollingUtils.scrollFullStackSpread(ScrollDirection.TO_CHEST)
+                } else if (ScrollSettings.SCROLL_LEAVE_LAST.isPressing()) {
+                    ScrollingUtils.scrollFullStackLeaveLast(ScrollDirection.TO_CHEST)
+                } else {
+                    ScrollingUtils.scrollFullStack(ScrollDirection.TO_CHEST)
+                }
+            } else {
+                if (ScrollSettings.SCROLL_THROW.isPressing()) {
+                    ScrollingUtils.scrollSingleItemThrow()
+                } else if (ScrollSettings.SCROLL_SPREAD.isPressing()) {
+                    ScrollingUtils.scrollSingleSpread(ScrollDirection.TO_CHEST)
+                } else if (ScrollSettings.SCROLL_LEAVE_LAST.isPressing()) {
+                    ScrollingUtils.scrollSingleItemLeaveLast(ScrollDirection.TO_CHEST)
+                } else {
+                    ScrollingUtils.scrollSingleItem(ScrollDirection.TO_CHEST)
+                }
+            }
+        }
+    }
+
+    fun scrollUp() {
+        if (Features.ITEM_SCROLLING.booleanValue) {
+            val focusedSlot = vFocusedSlot()
+            val focusedItem =
+                    focusedSlot?.`(itemStack)`
+                        ?: ItemStack.EMPTY
+            if (ScrollSettings.DIRECTION_ABSOLUTE.booleanValue) {
+                scrollToChest(focusedItem)
+            } else {
+                if (vFocusedSlot()?.`(inventoryOrNull)` is Inventory) {
+                    scrollToChest(focusedItem)
+                } else {
+                    scrollToPlayer(focusedItem)
+                }
+            }
+        }
+    }
+
+    fun scrollDown() {
+        if (Features.ITEM_SCROLLING.booleanValue) {
+            val focusedSlot = vFocusedSlot()
+            val focusedItem =
+                    focusedSlot?.`(itemStack)`
+                        ?: ItemStack.EMPTY
+            if (ScrollSettings.DIRECTION_ABSOLUTE.booleanValue) {
+                scrollToPlayer(focusedItem)
+            } else {
+                if (vFocusedSlot()?.`(inventoryOrNull)` is Inventory) {
+                    scrollToPlayer(focusedItem)
+                } else {
+                    scrollToChest(focusedItem)
+                }
+            }
+        }
+    }
+
+
+
+
+
+}
+
+
+private object InnerActions {
+
+    private fun forcePlayerSide(): Boolean { // default container side
+        return (SortSettings.SORT_AT_CURSOR.booleanValue && vFocusedSlot()?.`(inventoryOrNull)` is Inventory) ||
+                HintsManagerNG.isPlayerSideOnly(Vanilla.screen()?.javaClass)
+    }
+
+    fun doSort(sortingRule: Rule,
+               postAction: PostAction,
+               forcePlayer: Boolean,
+               container: AbstractContainerMenu) = tryCatch {
+        innerDoSort(sortingRule,
+                    postAction,
+                    forcePlayer,
+                    container)
+    }
+
+    fun innerDoSort(sortingRule: Rule,
+                    postAction: PostAction,
+                    forcePlayer: Boolean,
+                    container: AbstractContainerMenu) {
+        AdvancedContainer.tracker {
+            with(AreaTypes) {
+                val forcePlayerSide = forcePlayer || forcePlayerSide()
+                val target: ItemArea
+                if (forcePlayerSide || sortableItemStorage.get().isEmpty()) {
+                    val playerArea = playerStorage.get()
+                    val lockedArea = lockedSlots.get()
+                    val disabledArea = container.disabled.get()
+                    val slots = (playerStorage - lockedSlots - container.disabled)
+                    target = slots.get()
+                    if (SortSettings.RESTOCK_HOTBAR.booleanValue) {
+                        // priority: mainhand -> offhand -> hotbar 1-9
+                        (playerHands + playerHotbar).get().asSubTracker.restockFrom(target.asSubTracker)
+                    }
+                } else {
+                    val slots = (sortableItemStorage - container.disabled)
+                    target = slots.get()
+                }
+                target.asSubTracker.sort(sortingRule,
+                                         postAction,
+                                         target.isRectangular,
+                                         target.width,
+                                         target.height)
+            }
+        }
+    }
+
+    fun cleanTempSlotsForClosing() {
+        // in vanilla, seems only beacon will drop the item, handle beacon only
+        //   - clicking cancel button in beacon will bypass
+        //     ClientPlayerEntity.closeContainer (by GuiCloseC2SPacket instead)
+        if (Vanilla.container() !is BeaconMenu) return
+        if (!Vanilla.container().`(slots)`[0].`(itemStack)`.isEmpty()) { // beacon item
+            ContainerClicker.shiftClick(0)
+        }
+    }
+
+
+}

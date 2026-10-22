@@ -1,0 +1,113 @@
+/*
+ * Inventory Profiles Next
+ *
+ *   Copyright (c) 2022 Plamen K. Kosseff <p.kosseff@gmail.com>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+package org.anti_ad.mc.ipnext
+
+import org.anti_ad.mc.common.TellPlayer
+import org.anti_ad.mc.ipnext.gen.ModInfo
+import org.anti_ad.mc.common.gui.widgets.ConfigButtonInfo
+import org.anti_ad.mc.common.gui.widgets.CustomButtonWidget
+import org.anti_ad.mc.common.moreinfo.InfoManagerBase
+import org.anti_ad.mc.common.moreinfo.SemVer
+import org.anti_ad.mc.common.vanilla.Vanilla
+import org.anti_ad.mc.common.vanilla.alias.glue.I18n
+import org.anti_ad.mc.ipnext.config.ModSettings
+import org.anti_ad.mc.ipnext.event.ClientEventHandler.createChatMessage
+import java.net.URI
+import java.net.URL
+import kotlin.concurrent.timer
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
+
+object IPNInfoManager: InfoManagerBase() {
+    override var mcVersion = "game-version-missing"
+    override var version: String
+        get() = ModInfo.MOD_VERSION
+        set(_) {}
+    override var modId = ModInfo.MOD_ID
+    override var modName = ModInfo.MOD_NAME
+    override var loader: String = "loader-missing"
+
+    override val defaultRequest: Map<String, String> = mapOf("domain" to "ipn-stats.anti-ad.org",
+                                                             "name" to "pageview")
+
+    override val target: URL = URI("https://p.anti-ad.org/api/event").toURL()
+
+    override var isEnabled: () -> Boolean  = { false }
+
+
+    @OptIn(ExperimentalUuidApi::class)
+    private val session = Uuid.random().toString().sha256()
+
+    private val playerId = { Vanilla.playerNullable()?.gameProfile?.id?.toString()?.sha256() ?: "InvalidPlayer" }
+
+    fun doCheckVersion() {
+        timer("versionCheck", initialDelay = 5000, period = 10000, daemon = true) {
+            val player = Vanilla.playerNullable()
+            if (player != null && version != "null") {
+                val salt = "${playerId()}; $session"
+                this.cancel()
+                checkVersion(versionCheckUrl, "IPN", salt) { new, _, _ ->
+                    if (ModSettings.ENABLE_UPDATES_CHECK.value) {
+                        timer(name = "versionMessage", initialDelay = 5000, period = 10000, daemon = true) {
+                            Vanilla.queueForMainThread {
+                                val clickableMsg = createChatMessage(new)
+                                TellPlayer.chat(clickableMsg)
+                            }
+                            this.cancel()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    override fun checkVersion(versionCheckURL: URL, modId: String, salt: String, function: (SemVer, SemVer, Boolean) -> Unit) {
+        executor.execute {
+            try {
+                doCheckVersion(versionCheckURL,
+                               modId,
+                               salt,
+                               function)
+            } catch (t: Throwable) {
+                Log.warn("Update check failed with message - ${t.message}")
+            }
+        }
+    }
+
+    fun doSessionKeepAlive() {
+        timer("ipnPeriodicalTasks", initialDelay = 5 * 60 * 1000, period = 20 * 60 * 1000, daemon = true) {
+            
+            val player = Vanilla.playerNullable()
+            if (player != null && version != "null") {
+                val salt = "${playerId()}; $session"
+                checkVersion(versionCheckUrl, "IPN", salt) { _, _, _ -> }
+            }
+        }
+    }
+
+    object DoVersionCheckButtonInfo : ConfigButtonInfo() {
+        override val buttonText: String
+            get() = I18n.translate("ipnlegit.gui.config.button.do_version_check")
+
+        override fun onClick(widget: CustomButtonWidget) {
+            doCheckVersion()
+        }
+    }
+}

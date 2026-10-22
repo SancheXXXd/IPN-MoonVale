@@ -1,0 +1,14 @@
+{
+  "ipnlegit.common.gui.config.reset": "tilbakestill",
+  "ipnlegit.common.gui.config.yes": "ja",
+  "ipnlegit.common.gui.config.no": "nei",
+  "ipnlegit.common.gui.config.more": " ...(mer)",
+  "ipnlegit.common.gui.config.activate_on": "aktivér då",
+  "ipnlegit.common.enum.key_action.press": "trykk",
+  "ipnlegit.common.enum.key_action.release": "trykk ut",
+  "ipnlegit.common.enum.key_action.both": "trykk/trykk ut",
+  "ipnlegit.common.enum.context.ingame": "i spillet",
+  "ipnlegit.gui.config.ModSettings": "moddets innstillinger",
+  "ipnlegit.config.name.for_modpack_devs": "er du modpakklager?",
+  "modmenu.descriptionTranslation.inventoryprofilesnext": "Allowed version of the Inventory Profiles Next mod for the MoonVale server"
+}
