@@ -10,5 +10,8 @@
   "ipnlegit.common.enum.context.ingame": "i spillet",
   "ipnlegit.gui.config.ModSettings": "moddets innstillinger",
   "ipnlegit.config.name.for_modpack_devs": "er du modpakklager?",
-  "modmenu.descriptionTranslation.inventoryprofilesnext": "Allowed version of the Inventory Profiles Next mod for the MoonVale server"
+  "modmenu.descriptionTranslation.inventoryprofilesnext": "Inventory sorting and manual slot locking for MoonVale without automatic refilling, trading or crafting.",
+  "moonvale.link.website": "Server website",
+  "moonvale.link.source": "Source code",
+  "moonvale.link.upstream": "Original IPN"
 }

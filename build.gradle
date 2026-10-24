@@ -1,3 +1,5 @@
+import org.gradle.api.tasks.bundling.AbstractArchiveTask
+
 plugins {
     id 'net.fabricmc.fabric-loom' version '1.19.2'
     id 'org.jetbrains.kotlin.jvm' version '2.4.20'
@@ -5,44 +7,107 @@ plugins {
     id 'antlr'
     id 'com.gradleup.shadow' version '9.3.0'
 }
+
 version = project.mod_version
 group = 'org.anti_ad.mc'
 base { archivesName = 'IPNMoonVale-fabric' }
-repositories { mavenCentral() }
+
+def releaseBase = "IPNMoonVale-fabric-${project.version.toString().split('\\+')[0]}-mc${minecraft_version}"
+def generatedKotlin = layout.buildDirectory.dir('generated/sources/modInfo/kotlin')
+
+repositories {
+    mavenCentral()
+    exclusiveContent {
+        forRepository { maven { url = 'https://api.modrinth.com/maven' } }
+        filter { includeGroup 'maven.modrinth' }
+    }
+}
+
 loom { accessWidenerPath = file('src/main/resources/inventoryprofilesnext.accesswidener') }
 configurations { shade }
 configurations.implementation.extendsFrom(configurations.shade)
+
+['compileClasspath', 'runtimeClasspath', 'antlr', 'shade'].each { configurationName ->
+    configurations.named(configurationName) { resolutionStrategy.activateDependencyLocking() }
+}
+
 dependencies {
     minecraft "com.mojang:minecraft:${minecraft_version}"
     implementation "net.fabricmc:fabric-loader:${loader_version}"
     implementation 'net.fabricmc.fabric-api:fabric-api:0.163.0+26.3'
-    implementation files('libs/libIPN-fabric-26.3-6.9.0.jar')
-    compileOnly files('libs/modmenu-21.0.0.jar', 'libs/controlify.jar', 'libs/carpet.jar')
+    implementation('maven.modrinth:libipn:aKBFonyQ') { transitive = false }
+    compileOnly('maven.modrinth:modmenu:kyy7dbrZ') { transitive = false }
+    compileOnly('maven.modrinth:controlify:fo76vL20') { transitive = false }
+    compileOnly('maven.modrinth:carpet:yt9oDFOj') { transitive = false }
     implementation 'org.jetbrains.kotlin:kotlin-reflect:2.4.20'
-    implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0'
+    implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0'
     antlr 'org.antlr:antlr4:4.13.2'
     shade 'org.antlr:antlr4-runtime:4.13.2'
     shade 'com.yevdo:jwildcard:1.4'
 }
+
 java {
     toolchain.languageVersion = JavaLanguageVersion.of(25)
     withSourcesJar()
 }
 kotlin { jvmToolchain(25) }
+sourceSets.main.kotlin.srcDir(generatedKotlin)
 tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8'; options.release = 25 }
+tasks.withType(AbstractArchiveTask).configureEach {
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
+}
+
+tasks.register('generateModInfo', Copy) {
+    inputs.property('version', project.version.toString())
+    from('src/main/templates')
+    into(generatedKotlin.map { it.dir('org/anti_ad/mc/ipnext/gen') })
+    expand(version: project.version.toString())
+    filteringCharset = 'UTF-8'
+}
+processResources {
+    inputs.property('version', project.version.toString())
+    filesMatching('fabric.mod.json') { expand(version: project.version.toString()) }
+    filteringCharset = 'UTF-8'
+}
 generateGrammarSource {
     arguments += ['-visitor', '-package', 'org.anti_ad.mc.ipnext.gen', '-Xexact-output-dir']
     outputDirectory = file("$buildDir/generated-src/antlr/main/org/anti_ad/mc/ipnext/gen")
+    doLast {
+        fileTree(outputDirectory).matching { include '**/*.java' }.each { generated ->
+            def text = generated.getText('UTF-8')
+            text = text.replaceAll(/(?m)^\/\/ Generated from .*?([^\\\/]+\.g4) by ANTLR/, '// Generated from $1 by ANTLR')
+            generated.setText(text, 'UTF-8')
+        }
+    }
 }
-compileKotlin.dependsOn(generateGrammarSource)
-sourcesJar.dependsOn(generateGrammarSource)
+compileKotlin.dependsOn(generateGrammarSource, generateModInfo)
+sourcesJar {
+    dependsOn(generateGrammarSource, generateModInfo)
+    archiveFileName = "${releaseBase}-sources.jar"
+    from('LICENSE')
+    from('THIRD-PARTY-NOTICES.md')
+    from('src/main/templates') { into 'templates' }
+}
+jar {
+    archiveClassifier = 'unshaded'
+    destinationDirectory = layout.buildDirectory.dir('intermediates')
+}
 shadowJar {
     configurations = [project.configurations.shade]
     archiveClassifier = ''
-    archiveFileName = "IPNMoonVale-fabric-2.3.8-mc26.3.jar"
+    archiveFileName = "${releaseBase}.jar"
     relocate 'org.antlr', 'org.anti_ad.embedded.org.antlr'
     relocate 'com.yevdo', 'org.anti_ad.embedded.com.yevdo'
-    exclude 'META-INF/MANIFEST.MF'
+    exclude 'module-info.class', 'META-INF/versions/**/module-info.class'
+    from('LICENSE') { rename { 'LICENSE-IPN-MoonVale.txt' } }
+    from('THIRD-PARTY-NOTICES.md')
+    manifest {
+        attributes 'Implementation-Title': 'Inventory Profiles Next (MoonVale)',
+                   'Implementation-Version': project.version.toString(),
+                   'Source-Repository': 'https://github.com/SancheXXXd/IPN-MoonVale',
+                   'License': 'AGPL-3.0-or-later'
+    }
 }
-jar { archiveClassifier = 'unshaded'; from('LICENSE') }
-build.dependsOn(shadowJar)
+apply from: 'gradle/verify-release.gradle'
+build.dependsOn(shadowJar, verifyRelease)

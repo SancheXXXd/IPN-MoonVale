@@ -1,19 +1,22 @@
 {
   "schemaVersion": 1,
   "id": "inventoryprofilesnext",
-  "version": "2.3.8+26.3",
+  "version": "${version}",
   "name": "Inventory Profiles Next (MoonVale)",
-  "description": "Allowed version of the Inventory Profiles Next mod for the MoonVale server",
+  "description": "Inventory sorting and manual slot locking for MoonVale without automatic refilling, trading or crafting.",
   "authors": [
     "SancheXXXd_",
     "Omeleox"
   ],
-  "contributors": [],
+  "contributors": [
+    "Mirinimi / Plamen K. Kosseff (original Inventory Profiles Next)",
+    "jsnimda (original Inventory Profiles)"
+  ],
   "contact": {
-    "homepage": "https://inventory-profiles-next.github.io/",
-    "issues": "https://discord.gg/23YCxmveUM"
+    "homepage": "https://github.com/SancheXXXd/IPN-MoonVale",
+    "sources": "https://github.com/SancheXXXd/IPN-MoonVale"
   },
-  "license": "AGPL-3",
+  "license": "AGPL-3.0-or-later",
   "icon": "assets/inventoryprofilesnext/mod-icon.png",
   "environment": "client",
   "entrypoints": {
@@ -31,6 +34,18 @@
   "depends": {
     "minecraft": ">=26.3 <26.4",
     "libipn": ">=6.9.0 <6.10",
-    "fabric-language-kotlin": ">=1.13.10+kotlin.2.3.20"
+    "fabric-language-kotlin": ">=1.14.1+kotlin.2.4.20",
+    "java": ">=25",
+    "fabricloader": ">=0.19.5",
+    "fabric-api": "*"
+  },
+  "custom": {
+    "modmenu": {
+      "links": {
+        "moonvale.link.website": "https://moonvale.ru/",
+        "moonvale.link.source": "https://github.com/SancheXXXd/IPN-MoonVale",
+        "moonvale.link.upstream": "https://codeberg.org/Inventory-Profiles-Next-Mod/IPN"
+      }
+    }
   }
 }

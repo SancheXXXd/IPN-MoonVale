@@ -416,5 +416,8 @@
   "ipnlegit.gui.editor.name.help.move.speed": "빨리 빨리!!!",
   "ipnlegit.gui.editor.description.help.move.speed": "'Shift' 키를 누른 상태에서 \"버튼 위치 이동\" 키와 함께 누르면 더 빠르게 움직입니다",
   "ipnlegit.profiles.created_new_saved": "새로운 'Saved' 프로필을 생성 중...",
-  "modmenu.descriptionTranslation.inventoryprofilesnext": "Allowed version of the Inventory Profiles Next mod for the MoonVale server"
+  "modmenu.descriptionTranslation.inventoryprofilesnext": "Inventory sorting and manual slot locking for MoonVale without automatic refilling, trading or crafting.",
+  "moonvale.link.website": "Server website",
+  "moonvale.link.source": "Source code",
+  "moonvale.link.upstream": "Original IPN"
 }

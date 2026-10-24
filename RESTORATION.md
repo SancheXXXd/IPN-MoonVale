@@ -1,30 +1,33 @@
-# Происхождение и проверка проекта
+# Source provenance and verification limits
 
-Это восстановленная исходная сборка, а не оригинальный Git-репозиторий MoonVale.
+This is a reconstructed MoonVale source project, not the original MoonVale Git history.
+Its base is IPN v2.3.8 commit `bb3acc6f6ccbbf367fa5818bf8101e1247c68dae`,
+with the Fabric 26.3 platform layer. MoonVale changes were reconstructed from
+bytecode and decompiled classes in the supplied binary. Icons and translations
+were taken from that binary. Later build and privacy fixes are maintained here.
 
-База: исходники оригинального IPN v2.3.8, коммит
-`bb3acc6f6ccbbf367fa5818bf8101e1247c68dae`, с платформенным слоем Fabric 26.3.
-Изменения MoonVale перенесены после сравнения с присланным скомпилированным модом.
-Ограничения обработчиков, категории и значения настроек восстанавливались по байткоду
-и декомпилированным классам. Ресурсы взяты из последнего присланного JAR.
+The previous input JAR had SHA-256
+`0c97195df7da0c097d5407b1671c6d9e1dca74b34bd46a4d0ce83d8b357de2a4`.
+It is NOT the output of this corrected source tree. Do not publish that old JAR
+with these sources or claim byte-for-byte correspondence with it.
 
-Исходный файл: `IPNMoonVale-fabric-2.3.8-mc26.3.jar`.
-SHA-256: `0c97195df7da0c097d5407b1671c6d9e1dca74b34bd46a4d0ce83d8b357de2a4`.
+## Current verification
 
-## Что проверено
+`./gradlew build` compiles Kotlin/Java, generates parsers and ModInfo, and checks
+archive contents, metadata, licenses, expected source/dependency class names,
+selected disabled entry points and removed update/telemetry references.
+`python3 scripts/verify_reproducible.py` also compares two clean builds in different
+absolute directories, on the same machine and JDK. Reports are generated only
+after successful checks. Gradle dependency locks and checksum verification pin
+resolved dependencies; checksums are trust-on-first-use, not a security audit.
 
-- Успешная Gradle-сборка с компиляцией Kotlin и Java, генерацией ANTLR-парсеров и упаковкой Shadow JAR.
-- Соответствие метаданных, иконок и переводов последнему присланному JAR.
-- Отсутствие вызовов отключённых обработчиков автоматизации в проверенных активных путях байткода.
-- Целостность ZIP/JAR.
+The project-side inherited update checks and keepalive implementation were removed.
+This does not audit independent installed dependencies or their network behavior.
 
-## Ограничения
+## Not verified
 
-Побайтовое совпадение с присланным модом не гарантируется. Восстановлены исходники
-и поведение основных изменённых путей, а не исходная история сборки и ProGuard-настройки.
-Встроенные библиотеки ANTLR и JWildcard пересобираются из опубликованных зависимостей,
-а не копируются как обфусцированный код из JAR.
-
-Автоматических игровых тестов нет. Minecraft не запускался, серверные проверки и
-распознавание ботом не проверялись. Список CHANGES.md описывает обнаруженные изменения,
-но не является аудитом всех возможных способов вызова оставшегося кода.
+Minecraft has not been launched by these scripts. They do not establish gameplay
+correctness, complete absence of reachable disabled code, server/bot recognition,
+Modrinth approval, cross-platform reproducibility or a security audit. Source and
+binary compatibility must be tested with the target client and server before release.
+The original implementation of many disabled features remains in the source tree.

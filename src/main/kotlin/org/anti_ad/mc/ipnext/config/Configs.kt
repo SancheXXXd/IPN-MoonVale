@@ -675,7 +675,6 @@ object Debugs : ConfigDeclaration {
                                                                  KeybindSettings.GUI_DEFAULT)
     val GEN_TAG_VANILLA_TXT                       /**/ by button(GenerateTagVanillaTxtButtonInfo)
     val GEN_RULE_LIST                             /**/ by button(GenerateRuleListButtonInfo)
-    //val DO_VERSION_CHECK                          /**/ by button(IPNInfoManager.DoVersionCheckButtonInfo)
 }
 
 object Modpacks : ConfigDeclaration {

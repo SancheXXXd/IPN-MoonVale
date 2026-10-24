@@ -46,5 +46,8 @@
   "ipnlegit.config.name.category_priority_list": "Categorie Prioriteit Lijst",
   "ipnlegit.config.name.category_original_order": "Standaard categorie prioriteit",
   "ipnlegit.config.name.include_hotbar_modifier": "Neem de Hotbar Aanpasser op",
-  "modmenu.descriptionTranslation.inventoryprofilesnext": "Allowed version of the Inventory Profiles Next mod for the MoonVale server"
+  "modmenu.descriptionTranslation.inventoryprofilesnext": "Inventory sorting and manual slot locking for MoonVale without automatic refilling, trading or crafting.",
+  "moonvale.link.website": "Server website",
+  "moonvale.link.source": "Source code",
+  "moonvale.link.upstream": "Original IPN"
 }

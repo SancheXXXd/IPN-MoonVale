@@ -563,7 +563,7 @@
   "ipnlegit.gui.editor.name.help.move.speed": "Move Faster!!!",
   "ipnlegit.gui.editor.description.help.move.speed": "Holding 'Shift' with Move keys will make the button move faster.",
   "ipnlegit.profiles.created_new_saved": "Created new 'Saved' profile...",
-  "modmenu.descriptionTranslation.inventoryprofilesnext": "Allowed version of the Inventory Profiles Next mod for the MoonVale server",
+  "modmenu.descriptionTranslation.inventoryprofilesnext": "Inventory sorting and manual slot locking for MoonVale without automatic refilling, trading or crafting.",
   "ipnlegit.config.name.change_sort_order_with_scroll_wheel": "Change Sort Order with Scroll Wheel",
   "ipnlegit.config.description.change_sort_order_with_scroll_wheel": "Scroll the mouse wheel over the Sort button to quickly switch the sort order.",
   "ipnlegit.config.category.sort_button": "\"Sort\" Button",
@@ -590,5 +590,8 @@
   "ipnlegit.chat.loading_rules": "Loading custom sort rules...",
   "ipnlegit.chat.loading_special_hints": "Loading Slot Special Settings Hints configs...",
   "ipnlegit.chat.loading_hints": "Loading Slot Hints configs...",
-  "ipnlegit.marker": "IPNMoonVale"
+  "ipnlegit.marker": "IPNMoonVale",
+  "moonvale.link.website": "Server website",
+  "moonvale.link.source": "Source code",
+  "moonvale.link.upstream": "Original IPN"
 }

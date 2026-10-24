@@ -1,0 +1,73 @@
+import groovy.json.JsonSlurper
+import groovy.json.JsonOutput
+import java.util.zip.ZipFile
+
+tasks.register('verifyRelease') {
+    dependsOn tasks.named('shadowJar'), tasks.named('sourcesJar')
+    doLast {
+        def artifact = tasks.shadowJar.archiveFile.get().asFile
+        def expected = new TreeSet<String>()
+        sourceSets.main.output.classesDirs.each { dir ->
+            if (dir.exists()) fileTree(dir).matching { include '**/*.class' }.each {
+                expected.add(dir.toPath().relativize(it.toPath()).toString().replace('\\', '/'))
+            }
+        }
+        configurations.shade.files.each { dependency ->
+            new ZipFile(dependency).withCloseable { zip ->
+                zip.entries().each { entry ->
+                    if (entry.name.endsWith('.class') && !entry.name.endsWith('module-info.class')) {
+                        expected.add(entry.name.replaceFirst('^org/antlr/', 'org/anti_ad/embedded/org/antlr/').replaceFirst('^com/yevdo/', 'org/anti_ad/embedded/com/yevdo/'))
+                    }
+                }
+            }
+        }
+        new ZipFile(artifact).withCloseable { zip ->
+            def entries = zip.entries().toList()
+            def names = entries.collect { it.name }
+            assert names.size() == names.toSet().size(): 'Duplicate ZIP entries'
+            assert !names.any { it.endsWith('.jar') }: 'Unexpected nested binary'
+            def actual = new TreeSet(names.findAll { it.endsWith('.class') })
+            assert actual == expected: "Class set mismatch: missing=${expected - actual}, unexpected=${actual - expected}"
+            def metadata = new JsonSlurper().parse(zip.getInputStream(zip.getEntry('fabric.mod.json')))
+            assert metadata.version == project.version.toString()
+            assert metadata.name == 'Inventory Profiles Next (MoonVale)'
+            assert metadata.authors == ['SancheXXXd_', 'Omeleox']
+            assert metadata.license == 'AGPL-3.0-or-later'
+            assert metadata.depends['fabric-language-kotlin'] == '>=1.14.1+kotlin.2.4.20'
+            assert zip.getEntry('LICENSE-IPN-MoonVale.txt')
+            assert zip.getEntry('THIRD-PARTY-NOTICES.md')
+            assert zip.getInputStream(zip.getEntry(metadata.icon)).bytes == file('src/main/resources/' + metadata.icon).bytes
+            def mixins = new JsonSlurper().parse(zip.getInputStream(zip.getEntry('mixins.ipnext.json')))
+            assert mixins.compatibilityLevel == 'JAVA_25'
+            assert zip.getEntry(mixins.plugin.replace('.', '/') + '.class')
+            (mixins.mixins ?: []).plus(mixins.client ?: []).each { name ->
+                assert zip.getEntry((mixins.package + '.' + name).replace('.', '/') + '.class'): "Missing mixin $name"
+            }
+            def checks = [
+                'ClientEventHandler': ['AutoRefillHandler', 'ProfileSwitchHandler', 'LockedSlotKeeper', 'CuttersDispatcher', 'AnvilHandler', 'MiscHandler', 'IPNInfoManager'],
+                'CancellableInputHandler': ['VillagerTradeManager', 'ProfileSwitchHandler', 'AutoRefillHandler'],
+                'InventoryInputHandler': ['getMOVE_ALL_ITEMS', 'getTHROW_ALL_ITEMS', 'getSCROLL_TO_CHEST', 'getSCROLL_TO_INVENTORY'],
+                'ContainerScreenEventHandler': ['AutoRefillHandler', 'ProfilesUICollectionWidget', 'VillagerOverlayWidget'],
+                'MixinInGameHud': ['AutoRefillHandler']
+            ]
+            actual.findAll { it.startsWith('org/anti_ad/mc/ipnext/') }.each { name ->
+                def bytes = zip.getInputStream(zip.getEntry(name)).bytes
+                def text = new String(bytes, java.nio.charset.StandardCharsets.ISO_8859_1)
+                ['ipn.anti-ad.org', 'p.anti-ad.org', 'InfoManagerBase', 'IPNInfoManager'].each { forbidden ->
+                    assert !text.contains(forbidden): "Unexpected telemetry reference $forbidden in $name"
+                }
+                checks.each { handler, forbiddenNames ->
+                    if (name.endsWith('/' + handler + '.class')) forbiddenNames.each { forbidden ->
+                        assert !text.contains(forbidden): "Disabled entry point references $forbidden in $name"
+                    }
+                }
+            }
+            def report = file("$buildDir/reports/release-verification.json")
+            report.parentFile.mkdirs()
+            report.text = JsonOutput.prettyPrint(JsonOutput.toJson([
+                status: 'passed', scope: 'Static archive, source/dependency class-set and disabled-entry-point checks; not a Minecraft gameplay test',
+                version: project.version.toString(), classes: actual.size(), artifact: artifact.name
+            ])) + '\n'
+        }
+    }
+}

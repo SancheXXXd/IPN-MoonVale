@@ -168,5 +168,8 @@
   "ipnlegit.config.name.allow_break_for_non_enchanted": "Permettre à certaines pièces non-enchantées de briser",
   "ipnlegit.config.name.tool_max_durability_threshold": "Seuil de durabilité maximum",
   "ipnlegit.tooltip.sort_button": "Sort Inventory",
-  "modmenu.descriptionTranslation.inventoryprofilesnext": "Allowed version of the Inventory Profiles Next mod for the MoonVale server"
+  "modmenu.descriptionTranslation.inventoryprofilesnext": "Inventory sorting and manual slot locking for MoonVale without automatic refilling, trading or crafting.",
+  "moonvale.link.website": "Server website",
+  "moonvale.link.source": "Source code",
+  "moonvale.link.upstream": "Original IPN"
 }

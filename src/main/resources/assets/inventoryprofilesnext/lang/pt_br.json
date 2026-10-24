@@ -365,5 +365,8 @@
   "ipnlegit.gui.editor.name.help.move.speed": "Mover mais rápido!!!",
   "ipnlegit.gui.editor.description.help.move.speed": "Segurar 'Shift' com as teclas Move fará com que o botão se mova mais rápido.",
   "ipnlegit.profiles.created_new_saved": "Criado novo perfil 'Salvo'...",
-  "modmenu.descriptionTranslation.inventoryprofilesnext": "Allowed version of the Inventory Profiles Next mod for the MoonVale server"
+  "modmenu.descriptionTranslation.inventoryprofilesnext": "Inventory sorting and manual slot locking for MoonVale without automatic refilling, trading or crafting.",
+  "moonvale.link.website": "Server website",
+  "moonvale.link.source": "Source code",
+  "moonvale.link.upstream": "Original IPN"
 }

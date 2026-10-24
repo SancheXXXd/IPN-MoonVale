@@ -97,5 +97,8 @@
   "ipnlegit.config.name.interval_between_clicks_ms": "Intervalo entre clics (en milisegundos)",
   "ipnlegit.config.name.restock_hotbar": "Reabastecer la barra de acceso rápido al ordenar",
   "ipnlegit.config.name.highlight_clicking_slot": "Resaltar la ranura de clic",
-  "modmenu.descriptionTranslation.inventoryprofilesnext": "Allowed version of the Inventory Profiles Next mod for the MoonVale server"
+  "modmenu.descriptionTranslation.inventoryprofilesnext": "Inventory sorting and manual slot locking for MoonVale without automatic refilling, trading or crafting.",
+  "moonvale.link.website": "Server website",
+  "moonvale.link.source": "Source code",
+  "moonvale.link.upstream": "Original IPN"
 }

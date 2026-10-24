@@ -294,5 +294,8 @@
   "ipnlegit.gui.editor.name.help.move.speed": "Flytta snabbare!!!",
   "ipnlegit.gui.editor.description.help.move.speed": "Om du håller ned 'Skift' med Flytt-tangenterna så kommer knappen att röra sig snabbare.",
   "ipnlegit.profiles.created_new_saved": "Skapade en ny 'Sparad' profil...",
-  "modmenu.descriptionTranslation.inventoryprofilesnext": "Allowed version of the Inventory Profiles Next mod for the MoonVale server"
+  "modmenu.descriptionTranslation.inventoryprofilesnext": "Inventory sorting and manual slot locking for MoonVale without automatic refilling, trading or crafting.",
+  "moonvale.link.website": "Server website",
+  "moonvale.link.source": "Source code",
+  "moonvale.link.upstream": "Original IPN"
 }

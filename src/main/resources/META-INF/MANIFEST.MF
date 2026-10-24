@@ -1,8 +1,0 @@
-Manifest-Version: 1.0
-Implementation-Title: "Inventory Profiles Next (MoonVale)"
-Implementation-Version: 2.3.8+26.3
-Implementation-Timestamp: 2026-10-10T18:05:58.179842576Z
-X-easyModGitHash: bb3acc6f
-X-easyModVersion: 2.3.8+26.3
-X-easyModModLoader: fabric
-

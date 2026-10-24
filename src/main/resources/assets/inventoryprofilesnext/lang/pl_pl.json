@@ -163,5 +163,8 @@
   "ipnlegit.tooltip.move_all_button.move_all": "§6Przytrzymaj klawisz §o%s§r\n§6 - Przemieść wszystko",
   "ipnlegit.tooltip.move_all_button.move_matching_only": "§6Przytrzymaj klawisz §o%s§r\n§6 - Przemieść tylko pasujące",
   "ipnlegit.tooltip.continuous_crafting_checkbox": "Tworzenie ciągłe",
-  "modmenu.descriptionTranslation.inventoryprofilesnext": "Allowed version of the Inventory Profiles Next mod for the MoonVale server"
+  "modmenu.descriptionTranslation.inventoryprofilesnext": "Inventory sorting and manual slot locking for MoonVale without automatic refilling, trading or crafting.",
+  "moonvale.link.website": "Server website",
+  "moonvale.link.source": "Source code",
+  "moonvale.link.upstream": "Original IPN"
 }

@@ -31,11 +31,7 @@ import org.anti_ad.mc.ipnext.event.LockSlotsHandler
 import org.anti_ad.mc.ipnext.event.SlotHighlightHandler
 import org.anti_ad.mc.ipnext.gui.inject.InsertWidgetHandler
 import org.anti_ad.mc.ipnext.input.InputHandler
-import org.anti_ad.mc.ipnext.specific.initInfoManager
-import java.net.URI
-import java.net.URL
 
-val versionCheckUrl: URL = URI("https://ipn.anti-ad.org/ipn/ipnVersionCheckV3").toURL()
 
 @Suppress("unused")
 fun init() {
@@ -65,7 +61,6 @@ fun init() {
 
         Integrations.init()
 
-        initInfoManager()
 
         // Keybind register
 

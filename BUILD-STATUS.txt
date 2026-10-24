@@ -1,8 +1,0 @@
-Command: ./gradlew --no-daemon clean build
-Result: BUILD SUCCESSFUL
-JDK: 25
-Gradle: 9.8.0
-Fabric Loom: 1.19.2
-Kotlin: 2.4.20
-Minecraft: 26.3
-Game runtime and server checks: not tested

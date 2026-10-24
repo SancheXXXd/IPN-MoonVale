@@ -121,5 +121,8 @@
   "ipnlegit.config.description.scroll_full_stack": "Ако държите този клавиш, докато използвате \"Скролирай до сандък/играч\" клавиша, ще бъде скролиран пълния стек, а не само 1 предмет.\nБЕЛЕЖКА:\nТова променя поведението на настройките, споменати долу, как работят на стеково ниво, а не на 1 предмет.",
   "ipnlegit.config.name.scroll_leave_last": "Остави Едно",
   "ipnlegit.tooltip.sort_button": "Сортирай",
-  "modmenu.descriptionTranslation.inventoryprofilesnext": "Allowed version of the Inventory Profiles Next mod for the MoonVale server"
+  "modmenu.descriptionTranslation.inventoryprofilesnext": "Inventory sorting and manual slot locking for MoonVale without automatic refilling, trading or crafting.",
+  "moonvale.link.website": "Server website",
+  "moonvale.link.source": "Source code",
+  "moonvale.link.upstream": "Original IPN"
 }

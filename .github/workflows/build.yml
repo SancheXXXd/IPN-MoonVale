@@ -1,4 +1,4 @@
-name: Build
+name: Verify release
 on:
   push:
   pull_request:
@@ -15,11 +15,18 @@ jobs:
           distribution: temurin
           java-version: '25'
       - uses: gradle/actions/setup-gradle@v4
-      - name: Build
+      - name: Two isolated clean builds
+        run: python3 scripts/verify_reproducible.py
+      - name: Record commit and artifact checksums
         run: |
-          chmod +x gradlew
-          ./gradlew --no-daemon build
+          echo "Source commit: $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
+          cat build/libs/SHA256SUMS >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         with:
-          name: IPNMoonVale
-          path: build/libs/IPNMoonVale-fabric-2.3.8-mc26.3.jar
+          name: IPNMoonVale-${{ github.sha }}
+          if-no-files-found: error
+          path: |
+            build/libs/*.jar
+            build/libs/SHA256SUMS
+            build/reports/release-verification.json
+            build/reports/reproducibility.json

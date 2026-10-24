@@ -563,7 +563,7 @@
   "ipnlegit.gui.editor.name.help.move.speed": "Быстрее",
   "ipnlegit.gui.editor.description.help.move.speed": "Удерживай Shift, чтобы двигать кнопку быстрее",
   "ipnlegit.profiles.created_new_saved": "Создан новый профиль «Сохранённый»…",
-  "modmenu.descriptionTranslation.inventoryprofilesnext": "Allowed version of the Inventory Profiles Next mod for the MoonVale server",
+  "modmenu.descriptionTranslation.inventoryprofilesnext": "Inventory sorting and manual slot locking for MoonVale without automatic refilling, trading or crafting.",
   "ipnlegit.config.name.change_sort_order_with_scroll_wheel": "Порядок колёсиком мыши",
   "ipnlegit.config.description.change_sort_order_with_scroll_wheel": "Прокрути колесо мыши над кнопкой «Сортировать», чтобы быстро сменить порядок сортировки.",
   "ipnlegit.config.category.sort_button": "Кнопка «Сортировать»",
@@ -625,5 +625,8 @@
   "libipn.common.gui.config.advanced_keybind_settings.alt_key_label": "Доп. клавиша %d",
   "libipn.common.gui.config.advanced_keybind_settings.alt_key_description": "Можно назначить дополнительную комбинацию клавиш для этой же функции",
   "libipn.common.gui.config.advanced_keybind_settings.alt_key_title": "Дополнительные комбинации клавиш",
-  "ipnlegit.marker": "IPNMoonVale"
+  "ipnlegit.marker": "IPNMoonVale",
+  "moonvale.link.website": "Сайт сервера",
+  "moonvale.link.source": "Исходный код",
+  "moonvale.link.upstream": "Оригинальный IPN"
 }

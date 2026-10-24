@@ -22,11 +22,9 @@
 
 package org.anti_ad.mc.ipnext.specific
 
-import net.minecraft.SharedConstants
 
 import org.anti_ad.mc.common.gui.NativeContext
 import org.anti_ad.mc.common.vanilla.Vanilla.mc
-import org.anti_ad.mc.ipnext.IPNInfoManager
 
 inline fun serverIdentifier(perServer: Boolean): String = when {
     !perServer -> {
@@ -47,10 +45,6 @@ inline fun serverIdentifier(perServer: Boolean): String = when {
     }
 }
 
-inline fun initInfoManager() {
-    IPNInfoManager.loader = "neoforge"
-    IPNInfoManager.mcVersion = SharedConstants.getCurrentVersion().id()
-}
 
 val NativeContext.asOverlayContext: NativeContext
     get() {

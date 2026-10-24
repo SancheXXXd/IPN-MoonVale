@@ -22,18 +22,10 @@ package org.anti_ad.mc.ipnext.event
 
 import org.anti_ad.mc.common.input.GlobalInputHandler
 import org.anti_ad.mc.common.vanilla.VanillaUtil
-import org.anti_ad.mc.ipnext.IPNInfoManager
 import org.anti_ad.mc.ipnext.access.IPNSpi
-import org.anti_ad.mc.ipnext.config.Features
-import org.anti_ad.mc.ipnext.config.GuiSettings
-import org.anti_ad.mc.ipnext.config.LockedSlotsSettings
-import org.anti_ad.mc.ipnext.config.ModSettings
-import org.anti_ad.mc.ipnext.config.Tweaks
-import org.anti_ad.mc.ipnext.event.autorefill.AutoRefillHandler
 import org.anti_ad.mc.ipnext.parser.CustomDataFileLoader
-import org.anti_ad.mc.ipnext.specific.event.PClientEventHandler
 
-object ClientEventHandler: PClientEventHandler {
+object ClientEventHandler {
 
     private var firstJoin = true
 
@@ -75,8 +67,6 @@ object ClientEventHandler: PClientEventHandler {
         onJoinWorld();
         if (firstJoin) {
             firstJoin = false
-            IPNInfoManager.doCheckVersion()
-            IPNInfoManager.doSessionKeepAlive()
             CustomDataFileLoader.doSanityCheck()
         }
     }

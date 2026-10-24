@@ -1,9 +1,6 @@
-# Compile dependencies
+# Dependencies
 
-- libIPN — fabric-26.3-6.9.0, runtime dependency, https://modrinth.com/mod/libipn
-- Mod Menu — 21.0.0, compileOnly, https://modrinth.com/mod/modmenu
-- Controlify — 3.5.3+mc26.3, compileOnly, https://modrinth.com/mod/controlify
-- Carpet — 26.3, compileOnly, https://modrinth.com/mod/carpet
-
-These JARs are used as dependencies, not as a replacement for this project's source code.
-Their own licenses apply. No dependency JAR in this directory is shaded into the output.
+Third-party mod JARs are not checked in or bundled. `build.gradle` resolves pinned
+Modrinth version IDs via its Maven endpoint. Gradle dependency locks and checksum
+verification record the resolved artifacts. ANTLR runtime and JWildcard are the
+only shaded libraries; see THIRD-PARTY-NOTICES.md.
